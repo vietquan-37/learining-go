@@ -13,9 +13,6 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    # Service containers to run with `container-job`
     services:
       # Label used to access the service container
       postgres:
@@ -23,7 +20,8 @@ jobs:
         image: postgres
         # Provide the password for postgres
         env:
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 12345
           POSTGRES_DB: simple_bank
         # Set health checks to wait until postgres has started
         options: >-
@@ -32,6 +30,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    steps:
+    - uses: actions/checkout@v4
+
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -39,7 +40,6 @@ jobs:
 
     - name: Build
       run: go build -v ./...
-    - name: Migration
-      run: make migrateup
+
     - name: Test
       run: make test
