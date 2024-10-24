@@ -54,7 +54,7 @@ func (q *Queries) GetEntriesByAccount(ctx context.Context, arg GetEntriesByAccou
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Entry
+	items := []Entry{}
 	for rows.Next() {
 		var i Entry
 		if err := rows.Scan(

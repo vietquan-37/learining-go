@@ -6,21 +6,26 @@ import (
 	"fmt"
 )
 
+type Store interface {
+	Querier
+	TransferTx(ctx context.Context, arg TransferParams) (TransferTxResult, error)
+}
+
 // this way like inheritance in java to make the queries can use transaction
-type Store struct {
+type SQLStore struct {
 	*Queries
 	db *sql.DB
 }
 
-func NewStore(db *sql.DB) *Store {
-	return &Store{
+func NewStore(db *sql.DB) Store {
+	return &SQLStore{
 		db:      db,
 		Queries: New(db),
 	}
 }
 
 // create new queries object with transaction ,the callback fucntion and parameter deceide whether commit or rollback base on the err it return
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -52,7 +57,7 @@ type TransferTxResult struct {
 	ToEntry     Entry    `json:"to_entry"`
 }
 
-func (store *Store) TransferTx(ctx context.Context, arg TransferParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferParams) (TransferTxResult, error) {
 	var result TransferTxResult
 	err := store.execTx(ctx, func(q *Queries) error { // this become a clousure function when we want to get to result from call back fucntion
 		var err error
@@ -103,14 +108,14 @@ func addMoney(
 	acountId2 int64,
 	amount2 int64,
 ) (account1 Account, account2 Account, err error) {
-	account1, err = q.addAccountBalance(ctx, addAccountBalanceParams{
+	account1, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     acountId1,
 		Amount: amount1,
 	})
 	if err != nil {
 		return //this equal to return account 1,account2 err
 	}
-	account2, err = q.addAccountBalance(ctx, addAccountBalanceParams{
+	account2, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     acountId2,
 		Amount: amount2,
 	})
