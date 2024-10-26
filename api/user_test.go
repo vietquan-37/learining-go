@@ -166,7 +166,7 @@ func TestCreateUserApi(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl) //this was like the fake db
 			tc.buildStubs(store)
 			//start test server send request
-			server := NewServer(store)
+			server := newTestServer(t, store)
 			recorder := httptest.NewRecorder()
 			//change body data to Json
 			data, err := json.Marshal(tc.body)
