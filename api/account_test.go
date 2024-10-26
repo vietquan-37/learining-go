@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -98,7 +98,7 @@ func randomAcount() sqlc.Account {
 	}
 }
 func requireBodyMatchAccount(t *testing.T, body *bytes.Buffer, account sqlc.Account) {
-	data, err := ioutil.ReadAll(body)
+	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 	var gotAccount sqlc.Account
 	err = json.Unmarshal(data, &gotAccount)
