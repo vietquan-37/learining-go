@@ -12,7 +12,7 @@ import (
 // the _ it use for package that we import to avoid when saving it gone
 const (
 	dbDriver = "postgres"
-	dbSource = "postgresql://postgres:12345@localhost:5432/simple_bank?sslmode=disable"
+	dbSource = "postgresql://postgres:12345@localhost:5431/simple_bank?sslmode=disable"
 )
 
 var testQueries *Queries
