@@ -2,9 +2,20 @@ syntax="proto3";
 package pb;
 
 import "rpc_create_user.proto";
+import "google/api/annotations.proto";
 import "rpc_login.proto";
 option go_package = "github.com/vietquan-37/simplebank/pb";
 service SimpleBank{
-    rpc CreateUser(CreateUserRequest) returns(CreateUserResponse){}
-    rpc Login(LoginRequest) returns (LoginResponse){}
+    rpc CreateUser(CreateUserRequest) returns(CreateUserResponse){
+        option (google.api.http) = {
+                  post: "/v1/create_user"
+                 body: "*"
+                };
+    }
+    rpc Login(LoginRequest) returns (LoginResponse){
+        option (google.api.http) = {
+            post: "/v1/login"
+           body: "*"
+          };
+    }
 }

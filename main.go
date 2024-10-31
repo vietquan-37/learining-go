@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net"
+	"net/http"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/vietquan-37/simplebank/api"
 	"github.com/vietquan-37/simplebank/db/sqlc"
@@ -29,6 +33,7 @@ func main() {
 	}
 
 	store := sqlc.NewStore(conn)
+	go runGatewayServer(config, store)
 	runGrpcServer(config, store)
 }
 func runGrpcServer(config util.Config, store sqlc.Store) {
@@ -51,6 +56,47 @@ func runGrpcServer(config util.Config, store sqlc.Store) {
 	}
 
 }
+func runGatewayServer(config util.Config, store sqlc.Store) {
+
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal("cannot create to server:", err)
+	}
+	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+	//grpcmux will handle the HTTP request from the client and convert it to gRPC.
+	grpcMux := runtime.NewServeMux(jsonOption)
+	//avoid server to do an unnecessary work
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	//register a handler server for grpc gateway to call function of grpc server which is inital in first can call fuction in
+	err = pb.RegisterSimpleBankHandlerServer(ctx, grpcMux, server)
+	if err != nil {
+		log.Fatal("cannot register handler server:", err)
+	}
+	//this mux will receive http requests from client
+	mux := http.NewServeMux()
+	//convert in grpc
+	mux.Handle("/", grpcMux)
+
+	listener, err := net.Listen("tcp", config.HTTPServerAddress)
+	if err != nil {
+		log.Fatal("cannot create listener")
+	}
+	log.Printf("start HTTP gateway server at %s", listener.Addr().String())
+	err = http.Serve(listener, mux)
+	if err != nil {
+		log.Fatal("cannot connect to HTTP gateway:", err)
+	}
+
+}
+
 func runGinServer(config util.Config, store sqlc.Store) {
 	server, err := api.NewServer(config, store)
 	if err != nil {
