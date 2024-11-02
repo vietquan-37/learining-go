@@ -39,12 +39,13 @@ func (server *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "error while making refreshtoken: %s", err)
 	}
+	mtdt := server.extractMetadata(ctx)
 	session, err := server.store.CreateSession(ctx, sqlc.CreateSessionParams{
 		ID:           refreshTokenPayload.ID,
 		Username:     user.Username,
 		RefreshToken: refreshToken,
-		UserAgent:    "",
-		ClientIp:     "",
+		UserAgent:    mtdt.UserAgent,
+		ClientIp:     mtdt.ClientIp,
 		IsBlocked:    false,
 		ExpiredAt:    refreshTokenPayload.ExpiredAt,
 	})

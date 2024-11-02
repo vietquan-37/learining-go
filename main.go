@@ -57,7 +57,7 @@ func runGrpcServer(config util.Config, store sqlc.Store) {
 
 }
 func runGatewayServer(config util.Config, store sqlc.Store) {
-
+	//create grpc server
 	server, err := gapi.NewServer(config, store)
 	if err != nil {
 		log.Fatal("cannot create to server:", err)
@@ -82,9 +82,9 @@ func runGatewayServer(config util.Config, store sqlc.Store) {
 	}
 	//this mux will receive http requests from client
 	mux := http.NewServeMux()
-	//convert in grpc
 	mux.Handle("/", grpcMux)
-
+	fs := http.FileServer(http.Dir("./swagger"))
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
 		log.Fatal("cannot create listener")
