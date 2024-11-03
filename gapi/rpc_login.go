@@ -7,12 +7,18 @@ import (
 	"github.com/vietquan-37/simplebank/db/sqlc"
 	"github.com/vietquan-37/simplebank/pb"
 	"github.com/vietquan-37/simplebank/util"
+	"github.com/vietquan-37/simplebank/val"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (server *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	violation := validateLoginRequest(req)
+	if violation != nil {
+		return nil, invalidArgumentError(violation)
+	}
 	user, err := server.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -61,4 +67,13 @@ func (server *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 		RefreshTokenExpiredAt: timestamppb.New(refreshTokenPayload.ExpiredAt),
 	}
 	return rsp, nil
+}
+func validateLoginRequest(req *pb.LoginRequest) (violation []*errdetails.BadRequest_FieldViolation) {
+	if err := val.ValidateUsername(req.GetUsername()); err != nil {
+		violation = append(violation, ErrorResponse("username", err))
+	}
+	if err := val.ValidatePassword(req.GetPassword()); err != nil {
+		violation = append(violation, ErrorResponse("password", err))
+	}
+	return violation
 }
