@@ -2,6 +2,7 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -43,5 +44,22 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, user1.Email, user2.Email)
 	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
 	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
+
+}
+func TestUserUpdateFullName(t *testing.T) {
+	user := RandomUser(t)
+	fullName := util.RandomOwner()
+	userUpdate, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+		Username: user.Username,
+		FullName: sql.NullString{
+			String: fullName,
+			Valid:  true,
+		},
+	})
+	require.NoError(t, err)
+	require.NotEqual(t, user.FullName, userUpdate.FullName)
+	require.Equal(t, user.Email, userUpdate.Email)
+	require.Equal(t, user.HashedPassword, userUpdate.HashedPassword)
+	require.Equal(t, user.Username, userUpdate.Username)
 
 }

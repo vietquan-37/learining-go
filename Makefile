@@ -1,4 +1,4 @@
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock migrateup1 migratedown1 proto evans
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc test server mock migrateup1 migratedown1 proto evans redis
 postgres:
 	@docker run --name postgres12 -p 5431:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=12345 -d postgres
 createdb:
@@ -14,7 +14,7 @@ migratedown1:
 dropdb:
 	@docker exec -it postgres12 dropdb simple_bank
 test:
-	@go test -v -cover ./...
+	@go test -v -cover -short ./...
 server:
 	@go run main.go
 mock:
@@ -29,5 +29,7 @@ proto:
     proto/*.proto
 evans:
 	@evans --host localhost --port 9090 -r repl
+redis:
+	@docker run --name redis -p 6379:6379 -d redis:7-alpine
 sqlc:
 	@sqlc generate
