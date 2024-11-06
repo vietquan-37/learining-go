@@ -1,12 +1,13 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vietquan-37/simplebank/db/sqlc"
 )
 
 type newAccessTokenRequest struct {
@@ -31,7 +32,7 @@ func (server *Server) newAccessToken(ctx *gin.Context) {
 	}
 	session, err := server.store.GetSession(ctx, refreshPayload.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sqlc.ErrRecordNoFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}

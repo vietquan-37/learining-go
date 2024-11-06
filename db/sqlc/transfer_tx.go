@@ -19,45 +19,47 @@ type TransferTxResult struct {
 
 func (store *SQLStore) TransferTx(ctx context.Context, arg TransferParams) (TransferTxResult, error) {
 	var result TransferTxResult
-	err := store.execTx(ctx, func(q *Queries) error { // this become a clousure function when we want to get to result from call back fucntion
-		var err error
+	err := store.execTx(ctx,
+		func(q *Queries) error { // this become a clousure function when we want to get to result from call back fucntion
+			var err error
 
-		result.Transfer, err = q.CreateTranfer(ctx, CreateTranferParams{
-			FromAccountID: arg.FromAccountID,
-			ToAccountID:   arg.ToAccountID,
-			Amount:        arg.Amount,
+			result.Transfer, err = q.CreateTranfer(ctx, CreateTranferParams{
+				FromAccountID: arg.FromAccountID,
+				ToAccountID:   arg.ToAccountID,
+				Amount:        arg.Amount,
+			})
+
+			if err != nil {
+				return err
+
+			}
+			//add entry for account
+
+			result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+				AccountID: arg.FromAccountID,
+				Amount:    -arg.Amount,
+			})
+			if err != nil {
+				return err
+			}
+
+			result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
+				AccountID: arg.ToAccountID,
+				Amount:    arg.Amount,
+			})
+			if err != nil {
+				return err
+			}
+			//next will increase the amount in account balance
+			if arg.FromAccountID < arg.ToAccountID {
+				result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount)
+
+			} else {
+
+				result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
+			}
+			return nil
 		})
-		if err != nil {
-			return err
-
-		}
-		//add entry for account
-
-		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.FromAccountID,
-			Amount:    -arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
-
-		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
-			AccountID: arg.ToAccountID,
-			Amount:    arg.Amount,
-		})
-		if err != nil {
-			return err
-		}
-		//next will increase the amount in account balance
-		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount)
-
-		} else {
-
-			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
-		}
-		return nil
-	})
 	return result, err
 }
 func addMoney(

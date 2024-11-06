@@ -2,7 +2,6 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
@@ -17,7 +16,7 @@ func RandomAccount(t *testing.T) Account {
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
 	}
-	account, err := testQueries.CreateAccount(context.Background(), arg)
+	account, err := testStore.CreateAccount(context.Background(), arg)
 	require.NoError(t, err) // this say that if the error not nil the test will fail
 	require.NotEmpty(t, account)
 	require.Equal(t, arg.Owner, account.Owner)
@@ -33,7 +32,7 @@ func TestCreateAccount(t *testing.T) {
 func TestGetAccount(t *testing.T) {
 	//create account
 	account1 := RandomAccount(t)
-	account2, err := testQueries.GetAccount(context.Background(), account1.ID)
+	account2, err := testStore.GetAccount(context.Background(), account1.ID)
 	require.NoError(t, err)
 	require.Equal(t, account1.ID, account2.ID)
 	require.Equal(t, account1.Owner, account2.Owner)
@@ -47,7 +46,7 @@ func TestUpdateAccount(t *testing.T) {
 		ID:      account1.ID,
 		Balance: account1.Balance,
 	}
-	account2, err := testQueries.UpdateAccount(context.Background(), arg)
+	account2, err := testStore.UpdateAccount(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, account2)
 	require.Equal(t, account1.ID, account2.ID)
@@ -57,11 +56,11 @@ func TestUpdateAccount(t *testing.T) {
 }
 func TestDeleteAcount(t *testing.T) {
 	account1 := RandomAccount(t)
-	err := testQueries.DeleteAccount(context.Background(), account1.ID)
+	err := testStore.DeleteAccount(context.Background(), account1.ID)
 	require.NoError(t, err)
-	account2, err := testQueries.GetAccount(context.Background(), account1.ID)
+	account2, err := testStore.GetAccount(context.Background(), account1.ID)
 	require.Error(t, err)
-	require.EqualError(t, err, sql.ErrNoRows.Error())
+	require.EqualError(t, err, ErrRecordNoFound.Error())
 	require.Empty(t, account2)
 }
 func TestListAccounts(t *testing.T) {
@@ -72,7 +71,7 @@ func TestListAccounts(t *testing.T) {
 		Limit:  5,
 		Offset: 5,
 	}
-	accounts, err := testQueries.ListAccount(context.Background(), arg)
+	accounts, err := testStore.ListAccount(context.Background(), arg)
 	require.NoError(t, err)
 	require.Len(t, accounts, 5)
 	for _, account := range accounts {
@@ -90,7 +89,7 @@ func TestListAccountsByOwner(t *testing.T) {
 		Limit:  5,
 		Offset: 0,
 	}
-	accounts, err := testQueries.GetAccountsByOwner(context.Background(), arg)
+	accounts, err := testStore.GetAccountsByOwner(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, accounts)
 	for _, account := range accounts {

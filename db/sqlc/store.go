@@ -2,8 +2,8 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Store interface {
@@ -15,31 +15,13 @@ type Store interface {
 
 // this way like inheritance in java to make the queries can use transaction
 type SQLStore struct {
+	connPool *pgxpool.Pool
 	*Queries
-	db *sql.DB
 }
 
-func NewStore(db *sql.DB) Store {
+func NewStore(connPool *pgxpool.Pool) Store {
 	return &SQLStore{
-		db:      db,
-		Queries: New(db),
+		connPool: connPool,
+		Queries:  New(connPool),
 	}
-}
-
-// create new queries object with transaction ,the callback fucntion and parameter deceide whether commit or rollback base on the err it return
-func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := store.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	q := New(tx)
-	err = fn(q) // the function in parameter
-	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
-			return fmt.Errorf("tx err: %v ,rb err: %v", err, rbErr)
-		}
-		return err
-
-	}
-	return tx.Commit()
 }

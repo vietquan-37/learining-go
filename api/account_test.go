@@ -50,7 +50,7 @@ func TestGetAcountApi(t *testing.T) {
 				addAuthorization(t, request, authorizationTypeBearer, account.Owner, time.Minute, tokenMaker)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
-				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(sqlc.Account{}, sql.ErrNoRows)
+				store.EXPECT().GetAccount(gomock.Any(), gomock.Eq(account.ID)).Times(1).Return(sqlc.Account{}, sqlc.ErrRecordNoFound)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)

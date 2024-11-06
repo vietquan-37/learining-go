@@ -24,7 +24,7 @@ type CreateEntryParams struct {
 }
 
 func (q *Queries) CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, createEntry, arg.AccountID, arg.Amount)
+	row := q.db.QueryRow(ctx, createEntry, arg.AccountID, arg.Amount)
 	var i Entry
 	err := row.Scan(
 		&i.ID,
@@ -49,7 +49,7 @@ type GetEntriesByAccountParams struct {
 }
 
 func (q *Queries) GetEntriesByAccount(ctx context.Context, arg GetEntriesByAccountParams) ([]Entry, error) {
-	rows, err := q.db.QueryContext(ctx, getEntriesByAccount, arg.AccountID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, getEntriesByAccount, arg.AccountID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -67,9 +67,6 @@ func (q *Queries) GetEntriesByAccount(ctx context.Context, arg GetEntriesByAccou
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -82,7 +79,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetOneEntry(ctx context.Context, id int64) (Entry, error) {
-	row := q.db.QueryRowContext(ctx, getOneEntry, id)
+	row := q.db.QueryRow(ctx, getOneEntry, id)
 	var i Entry
 	err := row.Scan(
 		&i.ID,

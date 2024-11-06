@@ -2,7 +2,7 @@ package gapi
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 
 	"github.com/vietquan-37/simplebank/db/sqlc"
 	"github.com/vietquan-37/simplebank/pb"
@@ -21,7 +21,7 @@ func (server *Server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.Logi
 	}
 	user, err := server.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sqlc.ErrRecordNoFound) {
 			return nil, status.Errorf(codes.NotFound, "user not found: %s", err)
 		}
 		return nil, status.Errorf(codes.Internal, "err while retrieving user: %s", err)

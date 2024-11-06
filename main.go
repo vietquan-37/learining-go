@@ -2,23 +2,21 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"os"
 
 	"net"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/hibiken/asynq"
-	_ "github.com/lib/pq"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
+	_ "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/lib/pq"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/vietquan-37/simplebank/api"
 	"github.com/vietquan-37/simplebank/db/sqlc"
 	"github.com/vietquan-37/simplebank/gapi"
@@ -26,7 +24,9 @@ import (
 	"github.com/vietquan-37/simplebank/pb"
 	"github.com/vietquan-37/simplebank/util"
 	"github.com/vietquan-37/simplebank/worker"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 // this is to connect the test with db
@@ -39,13 +39,13 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot load from configuration")
 	}
-	conn, err := sql.Open(config.DBDriver, config.DBSource)
+	poolConn, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
 	}
 	//run migration
 	runDBMigration(config.MigrationURL, config.DBSource)
-	store := sqlc.NewStore(conn)
+	store := sqlc.NewStore(poolConn)
 	redisOpt := asynq.RedisClientOpt{
 		Addr: config.RedisAddress,
 	}

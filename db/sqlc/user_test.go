@@ -2,10 +2,10 @@ package sqlc
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	"github.com/vietquan-37/simplebank/util"
 )
@@ -19,7 +19,7 @@ func RandomUser(t *testing.T) User {
 		FullName:       util.RandomOwner(),
 		Email:          util.RandomEmail(),
 	}
-	user, err := testQueries.CreateUser(context.Background(), arg)
+	user, err := testStore.CreateUser(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, user)
 	require.Equal(t, arg.Username, user.Username)
@@ -36,7 +36,7 @@ func TestCreateUser(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	//create account
 	user1 := RandomUser(t)
-	user2, err := testQueries.GetUser(context.Background(), user1.Username)
+	user2, err := testStore.GetUser(context.Background(), user1.Username)
 	require.NoError(t, err)
 	require.Equal(t, user1.Username, user2.Username)
 	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
@@ -49,9 +49,9 @@ func TestGetUser(t *testing.T) {
 func TestUserUpdateFullName(t *testing.T) {
 	user := RandomUser(t)
 	fullName := util.RandomOwner()
-	userUpdate, err := testQueries.UpdateUser(context.Background(), UpdateUserParams{
+	userUpdate, err := testStore.UpdateUser(context.Background(), UpdateUserParams{
 		Username: user.Username,
-		FullName: sql.NullString{
+		FullName: pgtype.Text{
 			String: fullName,
 			Valid:  true,
 		},
