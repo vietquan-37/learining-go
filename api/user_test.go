@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/lib/pq"
+
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/vietquan-37/simplebank/db/mock"
 	"github.com/vietquan-37/simplebank/db/sqlc"
@@ -243,7 +244,7 @@ func TestLoginUserAPI(t *testing.T) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(sqlc.User{}, sqlc.ErrRecordNoFound)
+					Return(sqlc.User{}, sqlc.ErrRecordNotFound)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)

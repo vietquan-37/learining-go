@@ -32,7 +32,7 @@ func (server *Server) newAccessToken(ctx *gin.Context) {
 	}
 	session, err := server.store.GetSession(ctx, refreshPayload.ID)
 	if err != nil {
-		if errors.Is(err, sqlc.ErrRecordNoFound) {
+		if errors.Is(err, sqlc.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -61,6 +61,7 @@ func (server *Server) newAccessToken(ctx *gin.Context) {
 	}
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(
 		refreshPayload.Username,
+		refreshPayload.Role,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {

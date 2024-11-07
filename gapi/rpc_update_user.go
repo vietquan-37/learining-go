@@ -16,7 +16,7 @@ import (
 )
 
 func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-	authPayload, err := server.authorizeUser(ctx)
+	authPayload, err := server.authorizeUser(ctx, []string{util.DepositRole, util.BankerRole})
 	if err != nil {
 		return nil, unAuthorizeError(err)
 	}
@@ -24,7 +24,7 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	if violation != nil {
 		return nil, invalidArgumentError(violation)
 	}
-	if authPayload.Username != req.GetUsername() {
+	if authPayload.Username != req.GetUsername() && authPayload.Role == util.DepositRole {
 		return nil, status.Error(codes.PermissionDenied, "cannot update this user")
 	}
 	arg := sqlc.UpdateUserParams{
@@ -55,7 +55,7 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	}
 	user, err := server.store.UpdateUser(ctx, arg)
 	if err != nil {
-		if errors.Is(err, sqlc.ErrRecordNoFound) {
+		if errors.Is(err, sqlc.ErrRecordNotFound) {
 			return nil, status.Error(codes.NotFound, "user not found")
 		}
 		return nil, status.Errorf(codes.Internal, "fail to register user: %s", err)

@@ -60,7 +60,7 @@ func TestDeleteAcount(t *testing.T) {
 	require.NoError(t, err)
 	account2, err := testStore.GetAccount(context.Background(), account1.ID)
 	require.Error(t, err)
-	require.EqualError(t, err, ErrRecordNoFound.Error())
+	require.EqualError(t, err, ErrRecordNotFound.Error())
 	require.Empty(t, account2)
 }
 func TestListAccounts(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+
 	"github.com/vietquan-37/simplebank/db/sqlc"
 	"github.com/vietquan-37/simplebank/util"
 )
@@ -56,12 +56,11 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorResponse(err))
-				return
-			}
+		if sqlc.ErrorCode(err) == sqlc.UniqueViolation {
+
+			ctx.JSON(http.StatusForbidden, errorResponse(err))
+			return
+
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -91,7 +90,7 @@ func (server *Server) login(ctx *gin.Context) {
 	}
 	user, err := server.store.GetUser(ctx, req.Username)
 	if err != nil {
-		if errors.Is(err, sqlc.ErrRecordNoFound) {
+		if errors.Is(err, sqlc.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
@@ -105,6 +104,7 @@ func (server *Server) login(ctx *gin.Context) {
 	}
 	accessToken, accessTokenPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
+		user.Role,
 		server.config.AccessTokenDuration,
 	)
 	if err != nil {
@@ -113,6 +113,7 @@ func (server *Server) login(ctx *gin.Context) {
 	}
 	refreshToken, refreshTokenPayload, err := server.tokenMaker.CreateToken(
 		user.Username,
+		user.Role,
 		server.config.RefreshTokenDuration,
 	)
 	if err != nil {
